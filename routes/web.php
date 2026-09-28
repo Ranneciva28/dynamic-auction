@@ -2,6 +2,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
@@ -10,6 +11,10 @@ use App\Http\Controllers\Admin\SettingController;
 
 Route::get('/',[CatalogController::class,'index'])->name('home');
 Route::get('/produk/{product:slug}',[CatalogController::class,'show'])->name('products.show');
+Route::get('/keranjang',[CartController::class,'index'])->name('cart.index');
+Route::post('/keranjang',[CartController::class,'add'])->middleware('throttle:30,1')->name('cart.add');
+Route::patch('/keranjang/{product:id}',[CartController::class,'update'])->name('cart.update');
+Route::delete('/keranjang/{product:id}',[CartController::class,'remove'])->name('cart.remove');
 Route::post('/pesanan',[OrderController::class,'store'])->middleware('throttle:12,1')->name('orders.store');
 Route::get('/pesanan/{order:code}/{token}',[OrderController::class,'show'])->name('orders.show');
 Route::post('/pesanan/{order:code}/{token}/bukti',[OrderController::class,'proof'])->middleware('throttle:6,1')->name('orders.proof');

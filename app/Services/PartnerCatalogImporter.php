@@ -18,35 +18,37 @@ class PartnerCatalogImporter
     {
         $saved = 0;
         $failed = 0;
-        $page = 1;
-        $lastPage = 1;
-        do {
-            $props = $this->page(self::BASE.'/products?page='.$page, 'Products/index');
-            $listing = $props['products'] ?? [];
-            $lastPage = min(self::MAX_PAGES, max(1, (int)($listing['last_page'] ?? 1)));
-            $rows = $listing['data'] ?? [];
-            if (!is_array($rows) || ($page === 1 && !$rows)) {
-                throw new RuntimeException('Daftar produk sumber tidak ditemukan. Tidak ada data yang diimpor.');
-            }
-            $report("Halaman $page/$lastPage: ".count($rows).' produk ditemukan.');
-            foreach ($rows as $row) {
-                if ($limit > 0 && $saved + $failed >= $limit) break 2;
-                try {
-                    $this->saveProduct($row, $publish, $skipImages, $skipGallery);
-                    $saved++;
-                } catch (\Throwable $e) {
-                    $failed++;
-                    $report('Gagal '.($row['slug'] ?? 'produk tanpa slug').': '.$e->getMessage());
+        $pages = 0;
+        foreach (['available','sold'] as $feed) {
+            $page = 1;
+            $lastPage = 1;
+            do {
+                $props = $this->page(self::BASE.'/products?status='.$feed.'&page='.$page, 'Products/index');
+                $listing = $props['products'] ?? [];
+                $lastPage = min(self::MAX_PAGES, max(1, (int)($listing['last_page'] ?? 1)));
+                $rows = $listing['data'] ?? [];
+                if (!is_array($rows)) throw new RuntimeException('Daftar produk sumber tidak ditemukan.');
+                $pages++;
+                $report(ucfirst($feed)." $page/$lastPage: ".count($rows).' produk ditemukan.');
+                foreach ($rows as $row) {
+                    if ($limit > 0 && $saved + $failed >= $limit) break 3;
+                    try {
+                        $this->saveProduct($row, $publish, $skipImages, $skipGallery, $feed);
+                        $saved++;
+                    } catch (\Throwable $e) {
+                        $failed++;
+                        $report('Gagal '.($row['slug'] ?? 'produk tanpa slug').': '.$e->getMessage());
+                    }
+                    usleep(150000);
                 }
-                usleep(150000);
-            }
-            $page++;
-            usleep(250000);
-        } while ($page <= $lastPage);
-        return ['saved'=>$saved,'failed'=>$failed,'pages'=>min($page,$lastPage)];
+                $page++;
+                usleep(250000);
+            } while ($page <= $lastPage);
+        }
+        return ['saved'=>$saved,'failed'=>$failed,'pages'=>$pages];
     }
 
-    private function saveProduct(array $row, bool $publish, bool $skipImages, bool $skipGallery): void
+    private function saveProduct(array $row, bool $publish, bool $skipImages, bool $skipGallery, string $feed): void
     {
         $id = filter_var($row['id'] ?? null, FILTER_VALIDATE_INT);
         $sourceSlug = (string)($row['slug'] ?? '');
@@ -61,7 +63,7 @@ class PartnerCatalogImporter
         if (!$product->exists) $product->slug = 'mitra-'.Str::slug(Str::limit($name, 100, '')).'-'.$id;
         $category = Category::firstOrCreate(['slug'=>Str::slug($categoryName) ?: 'lainnya'], ['name'=>$categoryName]);
         $sourceStock = max(0, min(1000000, (int)($row['stock'] ?? 0)));
-        $hasOrders = $product->exists && $product->orders()->exists();
+        $hasOrders = $product->exists && ($product->orders()->exists() || $product->orderItems()->exists());
         $product->name = Str::limit($name, 180, '');
         $product->category_id = $category->id;
         $product->description = $this->plainText((string)($row['description'] ?? ''));
@@ -70,7 +72,7 @@ class PartnerCatalogImporter
         // An active local order reserves units; a re-import must never replenish those units.
         $product->stock = $hasOrders ? min($product->stock, $sourceStock) : $sourceStock;
         if (!$product->exists) $product->status = 'draft';
-        if ($publish) $product->status = ($sourceStock > 0 && ($row['is_active'] ?? true)) ? 'published' : 'sold';
+        if ($publish) $product->status = ($feed !== 'sold' && $sourceStock > 0 && ($row['is_active'] ?? true)) ? 'published' : 'sold';
         elseif ($product->exists && $sourceStock === 0 && $product->status === 'published') $product->status = 'sold';
         $product->source_synced_at = now();
         if (!$skipImages) {

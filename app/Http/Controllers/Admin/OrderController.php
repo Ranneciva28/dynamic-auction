@@ -9,11 +9,11 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 class OrderController {
     public function index(Request $request){
-        $query=Order::with('product')->latest();
+        $query=Order::with('product','items')->latest();
         if($request->filled('status'))$query->where('status',$request->input('status'));
         return view('admin.orders-index',['orders'=>$query->paginate(20)->withQueryString()]);
     }
-    public function show(Order $order){return view('admin.order-show',['order'=>$order->load('product')]);}
+    public function show(Order $order){return view('admin.order-show',['order'=>$order->load('product','items.product')]);}
     public function proof(Order $order){abort_unless($order->proof_path,404);return Storage::disk('local')->response($order->proof_path);}
     public function update(Request $request,Order $order){
         $data=$request->validate(['status'=>['required',Rule::in(['pending','review','paid','rejected','cancelled'])],'admin_note'=>'nullable|string|max:2000']);
@@ -23,8 +23,16 @@ class OrderController {
             if(in_array($from,['paid','rejected','cancelled'])&&$from!==$to)throw ValidationException::withMessages(['status'=>'Status akhir tidak dapat diubah.']);
             if($to==='paid'&&!$order->proof_path)throw ValidationException::withMessages(['status'=>'Minta bukti pembayaran sebelum verifikasi.']);
             if(in_array($to,['rejected','cancelled'])&&!in_array($from,['rejected','cancelled'])){
-                $product=Product::query()->lockForUpdate()->find($order->product_id);
-                if($product)$product->increment('stock',$order->quantity);
+                $items=$order->items()->orderBy('product_id')->get();
+                if($items->isNotEmpty()){
+                    foreach($items as $item){
+                        $product=Product::query()->lockForUpdate()->find($item->product_id);
+                        if($product)$product->increment('stock',$item->quantity);
+                    }
+                }else{
+                    $product=Product::query()->lockForUpdate()->find($order->product_id);
+                    if($product)$product->increment('stock',$order->quantity);
+                }
             }
             $order->update(['status'=>$to,'admin_note'=>$data['admin_note']??null,'paid_at'=>$to==='paid'?now():$order->paid_at]);
         });

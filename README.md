@@ -13,6 +13,8 @@ Katalog barang lelang dengan harga tebus tetap, dibangun dengan Laravel 12 dan M
 
 Ini adalah alur pembelian dengan harga tebus tetap, bukan mekanisme penawaran lelang langsung atau integrasi payment gateway. QRIS belum terpasang dalam paket; unggah QRIS milik bisnis Anda dari panel setelah instalasi.
 
+Pembeli dapat memilih Beli Sekarang atau memasukkan beberapa produk ke keranjang, lalu mengisi nama penerima, WhatsApp, alamat lengkap, dan pilihan JNE, J&T Express, Pos Indonesia, GrabExpress, atau GoSend. Setelah checkout, QRIS yang diunggah di Pengaturan tampil bersama subtotal produk. Ongkir belum dihitung otomatis dan perlu dikonfirmasi secara terpisah oleh pengelola sebelum pengiriman.
+
 ## Persyaratan
 
 - PHP 8.2+ beserta ekstensi Laravel yang diperlukan, termasuk `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `xml`.
@@ -63,6 +65,8 @@ php artisan partner:import --publish --skip-images --skip-gallery
 ```
 
 Perintah pertama menguji dua produk sebagai draft, kedua mengimpor seluruh katalog sebagai draft dengan foto lengkap, dan terakhir menerbitkan item tersedia setelah Anda memeriksa hasilnya. Importer dapat diulang: ia mencocokkan URL sumber sehingga tidak menggandakan produk. `--skip-gallery` hanya mengambil foto utama; `--skip-images` melewatkan semua foto. Jika situs sumber tidak dapat diakses atau mengubah formatnya, importer berhenti dengan pesan error; produk yang sudah tersimpan tetap ada dan proses bisa dilanjutkan dengan perintah yang sama.
+
+Import mitra membaca katalog tersedia dan produk sold. Gunakan `--publish` agar produk sold muncul pada menu Produk Sold. Impor ulang dengan `--skip-images --skip-gallery` memperbarui data dan status produk tanpa mengunduh gambar lagi.
 
 Stok sumber adalah snapshot pada waktu impor, bukan sinkronisasi real-time. Pada produk yang sudah memiliki pesanan lokal, importer tidak akan menaikkan stok otomatis. Cocokkan kembali ketersediaan mitra sebelum menyetujui pesanan; bila stok mitra habis, ubah produk ke `sold` atau `draft` di panel. Foto diunduh ke penyimpanan situs, jadi pastikan kapasitas disk cukup dan sumber mengizinkan unduhan.
 

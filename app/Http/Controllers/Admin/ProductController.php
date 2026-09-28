@@ -38,7 +38,7 @@ class ProductController {
     public function store(Request $request){$this->save($request);return redirect()->route('admin.products.index')->with('success','Produk dibuat.');}
     public function update(Request $request,Product $product){$this->save($request,$product);return redirect()->route('admin.products.index')->with('success','Produk diperbarui.');}
     public function destroy(Product $product){
-        if($product->orders()->exists())return back()->withErrors(['product'=>'Produk dengan riwayat pesanan tidak bisa dihapus. Ubah status menjadi draft.']);
+        if($product->orders()->exists()||$product->orderItems()->exists())return back()->withErrors(['product'=>'Produk dengan riwayat pesanan tidak bisa dihapus. Ubah status menjadi draft.']);
         $paths=array_filter([$product->cover_path,...$product->images()->pluck('path')->all()]);$product->delete();Storage::disk('public')->delete($paths);
         return back()->with('success','Produk dihapus.');
     }
