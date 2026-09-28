@@ -1,0 +1,6 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Katalog barang lelang dengan detail produk dan pemesanan yang jelas."><title>{{ $title ?? 'Lelang Dinamis' }} · {{ \App\Models\Setting::valueOf('site_name','Lelang Dinamis') }}</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/style.css"></head><body>
+@php($brand=\App\Models\Setting::valueOf('site_name','Lelang Dinamis'))
+<header class="site-header"><div class="container header-inner"><a class="brand" href="{{ route('home') }}"><span class="brand-mark">L</span><span>{{ $brand }}</span></a><nav class="top-nav" aria-label="Navigasi utama"><a href="{{ route('home') }}">Katalog</a>@auth<a href="{{ route('admin.dashboard') }}">Panel admin</a>@endauth</nav></div></header>
+<main>{{ $slot }}</main>
+<footer class="site-footer"><div class="container footer-inner"><span><b>{{ $brand }}</b><br>Barang pilihan, informasi jelas.</span><span>@if($whatsapp=\App\Models\Setting::valueOf('contact_whatsapp'))<a href="https://wa.me/{{ $whatsapp }}" target="_blank" rel="noopener">Hubungi via WhatsApp</a> · @endif © {{ date('Y') }} {{ $brand }}</span></div></footer>
+</body></html>

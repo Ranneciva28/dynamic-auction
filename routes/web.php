@@ -1,0 +1,36 @@
+<?php
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\SettingController;
+
+Route::get('/',[CatalogController::class,'index'])->name('home');
+Route::get('/produk/{product:slug}',[CatalogController::class,'show'])->name('products.show');
+Route::post('/pesanan',[OrderController::class,'store'])->middleware('throttle:12,1')->name('orders.store');
+Route::get('/pesanan/{order:code}/{token}',[OrderController::class,'show'])->name('orders.show');
+Route::post('/pesanan/{order:code}/{token}/bukti',[OrderController::class,'proof'])->middleware('throttle:6,1')->name('orders.proof');
+Route::get('/admin/login',[AuthController::class,'form'])->name('login');
+Route::post('/admin/login',[AuthController::class,'login'])->middleware('throttle:5,1')->name('login.attempt');
+Route::post('/admin/logout',[AuthController::class,'logout'])->middleware('admin')->name('logout');
+Route::prefix('admin')->name('admin.')->middleware('admin')->group(function(){
+    Route::get('/',[DashboardController::class,'index'])->name('dashboard');
+    Route::get('/produk',[ProductController::class,'index'])->name('products.index');
+    Route::get('/produk/baru',[ProductController::class,'create'])->name('products.create');
+    Route::post('/produk',[ProductController::class,'store'])->name('products.store');
+    Route::get('/produk/{product}/edit',[ProductController::class,'edit'])->name('products.edit');
+    Route::put('/produk/{product}',[ProductController::class,'update'])->name('products.update');
+    Route::delete('/produk/{product}',[ProductController::class,'destroy'])->name('products.destroy');
+    Route::delete('/foto/{image}',[ProductController::class,'removeImage'])->name('images.destroy');
+    Route::get('/import',[ProductController::class,'importForm'])->name('import.form');
+    Route::post('/import',[ProductController::class,'import'])->name('import.store');
+    Route::get('/pesanan',[AdminOrderController::class,'index'])->name('orders.index');
+    Route::get('/pesanan/{order}',[AdminOrderController::class,'show'])->name('orders.show');
+    Route::get('/pesanan/{order}/bukti',[AdminOrderController::class,'proof'])->name('orders.proof');
+    Route::patch('/pesanan/{order}',[AdminOrderController::class,'update'])->name('orders.update');
+    Route::get('/pengaturan',[SettingController::class,'edit'])->name('settings.edit');
+    Route::put('/pengaturan',[SettingController::class,'update'])->name('settings.update');
+});
