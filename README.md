@@ -51,6 +51,21 @@ HP001,Contoh Produk,Handphone,1500000,2,draft,2500000,Deskripsi barang,Kondisi 9
 
 `sku,nama,kategori,harga,stok,status` wajib. Status yang didukung: `draft`, `published`, `sold`. Harga angka bulat tanpa simbol. Impor pertama membuat produk; impor SKU yang sama memperbarui teks/harga/stok/status, sementara foto tetap dapat diatur dari editor. Hindari menimpa `stok` secara massal ketika ada pesanan aktif; stok dalam CSV adalah stok tersedia pada saat impor.
 
+## Impor katalog mitra
+
+Pengelola menyatakan memiliki izin memakai katalog `pusatlelangindonesia.com` dan mitra menangani pengiriman. Importer membaca katalog publik secara bertahap, mengambil nama, kategori, harga, harga pasar, stok, deskripsi, foto utama, dan galeri (jika tersedia). Kontak, testimoni, dan QRIS sumber tidak disalin; QRIS tetap milik situs Anda. Setiap produk menyimpan URL sumber dan waktu sinkronisasi, serta ditandai sebagai barang yang dikirim mitra di halaman detail.
+
+```bash
+php artisan migrate --force
+php artisan partner:import --limit=2 --skip-gallery
+php artisan partner:import
+php artisan partner:import --publish --skip-images --skip-gallery
+```
+
+Perintah pertama menguji dua produk sebagai draft, kedua mengimpor seluruh katalog sebagai draft dengan foto lengkap, dan terakhir menerbitkan item tersedia setelah Anda memeriksa hasilnya. Importer dapat diulang: ia mencocokkan URL sumber sehingga tidak menggandakan produk. `--skip-gallery` hanya mengambil foto utama; `--skip-images` melewatkan semua foto. Jika situs sumber tidak dapat diakses atau mengubah formatnya, importer berhenti dengan pesan error; produk yang sudah tersimpan tetap ada dan proses bisa dilanjutkan dengan perintah yang sama.
+
+Stok sumber adalah snapshot pada waktu impor, bukan sinkronisasi real-time. Pada produk yang sudah memiliki pesanan lokal, importer tidak akan menaikkan stok otomatis. Cocokkan kembali ketersediaan mitra sebelum menyetujui pesanan; bila stok mitra habis, ubah produk ke `sold` atau `draft` di panel. Foto diunduh ke penyimpanan situs, jadi pastikan kapasitas disk cukup dan sumber mengizinkan unduhan.
+
 ## Alur pesanan
 
 1. Pelanggan memesan produk; sistem mengunci stok dalam transaksi database, mencatat harga saat dipesan, dan memberi tautan unik ke halaman pesanan.
