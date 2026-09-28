@@ -26,6 +26,7 @@ class ProductController {
         $category=Category::firstOrCreate(['slug'=>Str::slug($data['category_name'])],['name'=>$data['category_name']]);
         unset($data['category_name'],$data['cover'],$data['images']);
         $data['category_id']=$category->id;
+        if((int)$data['stock']===0&&$data['status']==='published')$data['status']='sold';
         if(!$product){$product=new Product;$base=Str::slug($data['name'])?:'item';$data['slug']=$base.'-'.strtolower(Str::random(6));}
         $data['sort_order']=$data['sort_order']??0;
         $old=$product->cover_path;
@@ -69,7 +70,8 @@ class ProductController {
         DB::transaction(function()use($rows){foreach($rows as $r){
             $category=Category::firstOrCreate(['slug'=>Str::slug($r['kategori'])],['name'=>trim($r['kategori'])]);
             $sku=trim($r['sku']);$product=Product::firstOrNew(['slug'=>'sku-'.strtolower($sku)]);
-            $product->fill(['name'=>trim($r['nama']),'category_id'=>$category->id,'price'=>(int)$r['harga'],'market_price'=>isset($r['harga_pasar'])&&ctype_digit(trim($r['harga_pasar']))?(int)$r['harga_pasar']:null,'stock'=>(int)$r['stok'],'status'=>trim($r['status']),'description'=>$r['deskripsi']??null,'condition_notes'=>$r['kondisi']??null]);
+            $stock=(int)$r['stok'];$status=trim($r['status']);
+            $product->fill(['name'=>trim($r['nama']),'category_id'=>$category->id,'price'=>(int)$r['harga'],'market_price'=>isset($r['harga_pasar'])&&ctype_digit(trim($r['harga_pasar']))?(int)$r['harga_pasar']:null,'stock'=>$stock,'status'=>$stock===0&&$status==='published'?'sold':$status,'description'=>$r['deskripsi']??null,'condition_notes'=>$r['kondisi']??null]);
             $product->save();
         }});
         return redirect()->route('admin.products.index')->with('success',count($rows).' produk diimpor/diperbarui.');

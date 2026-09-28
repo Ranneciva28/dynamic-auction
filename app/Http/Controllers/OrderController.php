@@ -37,7 +37,9 @@ class OrderController
                 $qty=(int)$quantities[$id];
                 $product=Product::query()->lockForUpdate()->findOrFail($id);
                 if($product->status!=='published'||$product->stock<$qty)throw ValidationException::withMessages(['cart'=>$product->name.' sudah tidak cukup stok.']);
-                $product->decrement('stock',$qty);
+                $product->stock -= $qty;
+                if($product->stock===0)$product->status='sold';
+                $product->save();
                 $items[]=['product_id'=>$product->id,'product_name'=>$product->name,'quantity'=>$qty,'unit_price'=>$product->price,'subtotal'=>$product->price*$qty];
                 $total+=$product->price*$qty;$totalQuantity+=$qty;
             }
@@ -59,7 +61,7 @@ class OrderController
             return $order;
         });
         if($fromCart)$request->session()->forget('cart');
-        return redirect()->route('orders.show',['order'=>$order->code,'token'=>$order->public_token]);
+        return redirect()->route('orders.show',['order'=>$order->code,'token'=>$order->public_token])->with('order_created',true);
     }
 
     public function show(Order $order,string $token)

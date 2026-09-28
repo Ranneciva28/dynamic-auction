@@ -1,4 +1,13 @@
 <x-layout :title="'Pesanan '.$order->code">
+@if(session('order_created'))
+<dialog id="purchase-confirmation" class="purchase-dialog" aria-labelledby="purchase-confirmation-title" aria-describedby="purchase-confirmation-message">
+  <div class="purchase-dialog-icon" aria-hidden="true">✓</div>
+  <h2 id="purchase-confirmation-title">Pesanan diterima</h2>
+  <p id="purchase-confirmation-message">Terimakasih, tim kami akan segera menghubungi anda untuk memproses transaksi berikutnya</p>
+  <form method="dialog"><button class="button accent full" autofocus>Lihat rincian pesanan</button></form>
+</dialog>
+<script>document.getElementById('purchase-confirmation').showModal();</script>
+@endif
 <div class="container order-page"><a class="back-link" href="{{ route('home') }}">← Kembali ke katalog</a><div class="eyebrow">PESANAN {{ $order->code }}</div><h1>Detail pesanan</h1>
 @if(session('success'))<div class="notice success">{{ session('success') }}</div>@endif
 <div class="order-columns"><div class="panel"><h2>Barang dan pengiriman</h2>

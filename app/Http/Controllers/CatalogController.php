@@ -9,7 +9,7 @@ class CatalogController {
         $query=Product::with('category')->where('status',$status);
         if($request->filled('q')) $query->where('name','like','%'.$request->input('q').'%');
         if($request->filled('kategori')) $query->whereHas('category',fn($q)=>$q->where('slug',$request->input('kategori')));
-        if($status==='published'&&$request->input('status')==='available') $query->where('stock','>',0);
+        if($status==='published') $query->where('stock','>',0);
         $sort=$request->input('sort','newest');
         match($sort){
             'price_asc'=>$query->orderBy('price'),

@@ -72,8 +72,8 @@ class PartnerCatalogImporter
         // An active local order reserves units; a re-import must never replenish those units.
         $product->stock = $hasOrders ? min($product->stock, $sourceStock) : $sourceStock;
         if (!$product->exists) $product->status = 'draft';
-        if ($publish) $product->status = ($feed !== 'sold' && $sourceStock > 0 && ($row['is_active'] ?? true)) ? 'published' : 'sold';
-        elseif ($product->exists && $sourceStock === 0 && $product->status === 'published') $product->status = 'sold';
+        if ($publish) $product->status = ($feed !== 'sold' && $product->stock > 0 && ($row['is_active'] ?? true)) ? 'published' : 'sold';
+        elseif ($product->exists && $product->stock === 0 && $product->status === 'published') $product->status = 'sold';
         $product->source_synced_at = now();
         if (!$skipImages) {
             $cover = $this->imagePath($row['main_image'] ?? null);
