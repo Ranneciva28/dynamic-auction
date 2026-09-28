@@ -28,11 +28,12 @@ class ProductController {
         $data['category_id']=$category->id;
         if((int)$data['stock']===0&&$data['status']==='published')$data['status']='sold';
         if(!$product){$product=new Product;$base=Str::slug($data['name'])?:'item';$data['slug']=$base.'-'.strtolower(Str::random(6));}
+        else $data['catalog_locked']=true;
         $data['sort_order']=$data['sort_order']??0;
         $old=$product->cover_path;
         if($request->hasFile('cover'))$data['cover_path']=$request->file('cover')->store('products','public');
         $product->fill($data)->save();
-        if($old&&$old!==$product->cover_path)Storage::disk('public')->delete($old);
+        if($old&&$old!==$product->cover_path&&!$product->images()->where('path',$old)->exists())Storage::disk('public')->delete($old);
         foreach($request->file('images',[]) as $image)$product->images()->create(['path'=>$image->store('products','public')]);
         return $product;
     }
@@ -43,7 +44,14 @@ class ProductController {
         $paths=array_filter([$product->cover_path,...$product->images()->pluck('path')->all()]);$product->delete();Storage::disk('public')->delete($paths);
         return back()->with('success','Produk dihapus.');
     }
-    public function removeImage(ProductImage $image){$path=$image->path;$image->delete();Storage::disk('public')->delete($path);return back()->with('success','Foto dihapus.');}
+    public function removeImage(ProductImage $image){$path=$image->path;$product=$image->product;$product->catalog_locked=true;$product->save();$image->delete();if($product->cover_path!==$path)Storage::disk('public')->delete($path);return back()->with('success','Foto dihapus.');}
+    public function downloadCover(Product $product){return $this->downloadPhoto($product->cover_path,$product->name.'-utama');}
+    public function downloadImage(ProductImage $image){return $this->downloadPhoto($image->path,$image->product->name.'-foto-'.$image->id);}
+    private function downloadPhoto(?string $path,string $name){
+        abort_unless($path&&Storage::disk('public')->exists($path),404);
+        $extension=strtolower(pathinfo($path,PATHINFO_EXTENSION));
+        return Storage::disk('public')->download($path,(Str::slug($name)?:'produk').'.'.$extension);
+    }
     public function importForm(){return view('admin.import');}
     public function import(Request $request){
         $request->validate(['csv'=>'required|file|mimes:csv,txt|max:2048']);
@@ -70,6 +78,7 @@ class ProductController {
         DB::transaction(function()use($rows){foreach($rows as $r){
             $category=Category::firstOrCreate(['slug'=>Str::slug($r['kategori'])],['name'=>trim($r['kategori'])]);
             $sku=trim($r['sku']);$product=Product::firstOrNew(['slug'=>'sku-'.strtolower($sku)]);
+            if($product->exists&&$product->catalog_locked)continue;
             $stock=(int)$r['stok'];$status=trim($r['status']);
             $product->fill(['name'=>trim($r['nama']),'category_id'=>$category->id,'price'=>(int)$r['harga'],'market_price'=>isset($r['harga_pasar'])&&ctype_digit(trim($r['harga_pasar']))?(int)$r['harga_pasar']:null,'stock'=>$stock,'status'=>$stock===0&&$status==='published'?'sold':$status,'description'=>$r['deskripsi']??null,'condition_notes'=>$r['kondisi']??null]);
             $product->save();

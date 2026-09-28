@@ -26,9 +26,11 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function(){
     Route::get('/produk',[ProductController::class,'index'])->name('products.index');
     Route::get('/produk/baru',[ProductController::class,'create'])->name('products.create');
     Route::post('/produk',[ProductController::class,'store'])->name('products.store');
-    Route::get('/produk/{product}/edit',[ProductController::class,'edit'])->name('products.edit');
-    Route::put('/produk/{product}',[ProductController::class,'update'])->name('products.update');
-    Route::delete('/produk/{product}',[ProductController::class,'destroy'])->name('products.destroy');
+    Route::get('/produk/{product:id}/edit',[ProductController::class,'edit'])->name('products.edit');
+    Route::put('/produk/{product:id}',[ProductController::class,'update'])->name('products.update');
+    Route::delete('/produk/{product:id}',[ProductController::class,'destroy'])->name('products.destroy');
+    Route::get('/produk/{product:id}/foto',[ProductController::class,'downloadCover'])->name('products.download-cover');
+    Route::get('/foto/{image}/unduh',[ProductController::class,'downloadImage'])->name('images.download');
     Route::delete('/foto/{image}',[ProductController::class,'removeImage'])->name('images.destroy');
     Route::get('/import',[ProductController::class,'importForm'])->name('import.form');
     Route::post('/import',[ProductController::class,'import'])->name('import.store');

@@ -60,6 +60,8 @@ class PartnerCatalogImporter
         }
         $sourceUrl = self::BASE.'/products/'.$sourceSlug;
         $product = Product::firstOrNew(['source_url'=>$sourceUrl]);
+        // An admin-edited product keeps its local details, stock, and images on later imports.
+        if ($product->exists && $product->catalog_locked) return;
         if (!$product->exists) $product->slug = 'mitra-'.Str::slug(Str::limit($name, 100, '')).'-'.$id;
         $category = Category::firstOrCreate(['slug'=>Str::slug($categoryName) ?: 'lainnya'], ['name'=>$categoryName]);
         $sourceStock = max(0, min(1000000, (int)($row['stock'] ?? 0)));
