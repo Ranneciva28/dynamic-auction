@@ -103,7 +103,7 @@ class PartnerCatalogImporter
         $dom = new \DOMDocument();
         $previous = libxml_use_internal_errors(true);
         try { $dom->loadHTML($html); } finally { libxml_clear_errors(); libxml_use_internal_errors($previous); }
-        $node = $dom->getElementById('app');
+        $node = (new \DOMXPath($dom))->query('//*[@id="app"]')->item(0);
         $page = $node ? json_decode($node->getAttribute('data-page'), true, 512, JSON_THROW_ON_ERROR) : null;
         if (!is_array($page) || ($page['component'] ?? null) !== $component) {
             throw new RuntimeException('Format halaman sumber berubah pada '.$url);
