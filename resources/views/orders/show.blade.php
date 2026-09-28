@@ -1,10 +1,10 @@
 <x-layout :title="'Pesanan '.$order->code">
-@if(session('order_created'))
+@if(session('proof_uploaded'))
 <dialog id="purchase-confirmation" class="purchase-dialog" aria-labelledby="purchase-confirmation-title" aria-describedby="purchase-confirmation-message">
   <div class="purchase-dialog-icon" aria-hidden="true">✓</div>
-  <h2 id="purchase-confirmation-title">Pesanan diterima</h2>
+  <h2 id="purchase-confirmation-title">Bukti transfer diterima</h2>
   <p id="purchase-confirmation-message">Terimakasih, tim kami akan segera menghubungi anda untuk memproses transaksi berikutnya</p>
-  <form method="dialog"><button class="button accent full" autofocus>Lihat rincian pesanan</button></form>
+  <form method="dialog"><button class="button accent full" autofocus>Lihat status pesanan</button></form>
 </dialog>
 <script>document.getElementById('purchase-confirmation').showModal();</script>
 @endif
@@ -21,6 +21,27 @@
 @if(in_array($order->status,['pending','review']))
   @if($payment['qris'])<p>Scan QRIS dan bayar subtotal barang yang tertera. Ongkir dikonfirmasi terpisah.</p><div class="qris-frame"><img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($payment['qris']) }}" alt="Kode QRIS untuk pembayaran pesanan"></div>@if($payment['name'])<p class="merchant-name">Atas nama {{ $payment['name'] }}</p>@endif
   @else<p>QRIS belum dipasang. Hubungi pengelola untuk instruksi pembayaran.</p>@endif
+  @if($order->status==='pending' && $order->payment_expires_at && $payment['qris'])
+    @php($countdownParts=explode('{time}',$payment['countdown_text'],2))
+    <div class="payment-countdown" id="payment-countdown" data-seconds="{{ max(0,$order->payment_expires_at->timestamp - now()->timestamp) }}">
+      <p>{{ $countdownParts[0] }} <strong id="countdown-clock" role="timer">00:00</strong> {{ $countdownParts[1]??'' }}</p>
+      <small id="countdown-ended" hidden>Waktu anjuran pembayaran selesai. Jika sudah transfer, unggah bukti agar admin dapat memeriksanya.</small>
+    </div>
+    <script>
+      (() => {
+        const box=document.getElementById('payment-countdown');
+        const clock=document.getElementById('countdown-clock');
+        const target=Date.now()+Number(box.dataset.seconds)*1000;
+        const update=()=>{
+          const remaining=Math.max(0,Math.ceil((target-Date.now())/1000));
+          clock.textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
+          if(remaining===0){box.classList.add('expired');document.getElementById('countdown-ended').hidden=false;clearInterval(timer)}
+        };
+        const timer=setInterval(update,1000);
+        update();
+      })();
+    </script>
+  @endif
   @if($payment['instructions'])<p class="payment-instructions">{{ $payment['instructions'] }}</p>@endif
   <form method="post" action="{{ route('orders.proof',[$order->code,$order->public_token]) }}" enctype="multipart/form-data" class="proof-form">@csrf<label>Unggah bukti pembayaran<input type="file" name="proof" accept="image/png,image/jpeg,image/webp" required></label>@error('proof')<div class="notice error">{{ $message }}</div>@enderror<button type="submit" class="button dark full">Kirim bukti pembayaran</button><p class="fine-print">JPG, PNG, atau WebP, maksimal 4 MB. Pembayaran diperiksa manual.</p></form>
 @else<p>Status pesanan ini sudah final.</p>@endif</div></div>

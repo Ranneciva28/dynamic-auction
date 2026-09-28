@@ -25,9 +25,10 @@ class OrderController
             'shipping_method'=>['required',Rule::in(array_keys(Order::SHIPPING_METHODS))],
         ]);
         $fromCart=($data['mode']??'single')==='cart';
+        $paymentWindow=max(1,min(1440,(int)Setting::valueOf('payment_countdown_minutes','30')));
         $quantities=$fromCart?$request->session()->get('cart',[]):[(int)$data['product_id']=>(int)$data['quantity']];
         if(!is_array($quantities)||!$quantities)throw ValidationException::withMessages(['cart'=>'Keranjang kosong.']);
-        $order=DB::transaction(function()use($data,$quantities){
+        $order=DB::transaction(function()use($data,$quantities,$paymentWindow){
             $items=[];$total=0;$totalQuantity=0;
             foreach($quantities as $id=>$qty){
                 if(!ctype_digit((string)$id)||!is_numeric($qty)||(int)$qty<1||(int)$qty>10)throw ValidationException::withMessages(['cart'=>'Isi keranjang tidak valid.']);
@@ -56,19 +57,20 @@ class OrderController
                 'unit_price'=>$one['unit_price']??0,
                 'total'=>$total,
                 'status'=>'pending',
+                'payment_expires_at'=>now()->addMinutes($paymentWindow),
             ]);
             foreach($items as $item)$order->items()->create($item);
             return $order;
         });
         if($fromCart)$request->session()->forget('cart');
-        return redirect()->route('orders.show',['order'=>$order->code,'token'=>$order->public_token])->with('order_created',true);
+        return redirect()->route('orders.show',['order'=>$order->code,'token'=>$order->public_token]);
     }
 
     public function show(Order $order,string $token)
     {
         abort_unless(hash_equals($order->public_token,$token),404);
         $order->load('product','items');
-        $payment=['qris'=>Setting::valueOf('payment_qris'),'name'=>Setting::valueOf('payment_name'),'instructions'=>Setting::valueOf('payment_instructions')];
+        $payment=['qris'=>Setting::valueOf('payment_qris'),'name'=>Setting::valueOf('payment_name'),'instructions'=>Setting::valueOf('payment_instructions'),'countdown_text'=>Setting::valueOf('payment_countdown_text','Silahkan bayar dalam waktu {time} untuk mengamankan tebus gadai ini')];
         return view('orders.show',compact('order','payment'));
     }
 
@@ -80,6 +82,6 @@ class OrderController
         $path=$request->file('proof')->store('payment-proofs','local');
         if($order->proof_path)Storage::disk('local')->delete($order->proof_path);
         $order->update(['proof_path'=>$path,'status'=>'review']);
-        return back()->with('success','Bukti pembayaran diterima. Admin akan memverifikasinya.');
+        return back()->with('success','Bukti pembayaran diterima. Admin akan memverifikasinya.')->with('proof_uploaded',true);
     }
 }
