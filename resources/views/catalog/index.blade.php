@@ -43,4 +43,32 @@
     @endforeach</div><div class="pagination">{{ $products->links('vendor.pagination.compact') }}</div>
   @else<div class="empty-panel"><h3>Belum ada produk di sini</h3><p>Ubah pencarian atau pilih kategori lain.</p><a href="{{ route('home') }}#produk" class="button outline">Lihat semua produk</a></div>@endif
 </div>
+@if($testimonials->isNotEmpty() && request('status') !== 'sold')
+  <section class="testimonials-section" id="testimoni" aria-labelledby="testimonials-title">
+    <div class="container">
+      <div class="testimonials-heading">
+        <div class="eyebrow">PENGALAMAN PELANGGAN</div>
+        <h2 id="testimonials-title">Bagaimana Kata Pelanggan Kami</h2>
+      </div>
+      <div class="testimonials-grid">
+        @foreach($testimonials as $item)
+          <article class="testimonial-card">
+            <div class="testimonial-stars" aria-label="{{ (int) ($item['rating'] ?? 5) }} dari 5 bintang">
+              @for($star = 1; $star <= 5; $star++)<span class="{{ $star <= (int) ($item['rating'] ?? 5) ? 'filled' : 'empty' }}" aria-hidden="true">★</span>@endfor
+            </div>
+            <p class="testimonial-message">“{{ $item['message'] }}”</p>
+            <div class="testimonial-person">
+              @if(!empty($item['photo']))
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item['photo']) }}" alt="" loading="lazy">
+              @else
+                <span class="testimonial-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($item['name'],0,1)) }}</span>
+              @endif
+              <strong>{{ $item['name'] }}</strong>
+            </div>
+          </article>
+        @endforeach
+      </div>
+    </div>
+  </section>
+@endif
 </x-layout>

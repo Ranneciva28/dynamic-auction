@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TestimonialController;
 
 Route::get('/',[CatalogController::class,'index'])->name('home');
 Route::get('/produk/{product:slug}',[CatalogController::class,'show'])->name('products.show');
@@ -40,4 +41,6 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function(){
     Route::patch('/pesanan/{order}',[AdminOrderController::class,'update'])->name('orders.update');
     Route::get('/pengaturan',[SettingController::class,'edit'])->name('settings.edit');
     Route::put('/pengaturan',[SettingController::class,'update'])->name('settings.update');
+    Route::get('/testimoni',[TestimonialController::class,'edit'])->name('testimonials.edit');
+    Route::put('/testimoni',[TestimonialController::class,'update'])->name('testimonials.update');
 });
