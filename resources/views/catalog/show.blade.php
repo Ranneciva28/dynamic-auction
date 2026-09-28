@@ -6,7 +6,6 @@
       @if($product->images->count())<div class="thumb-grid">@foreach($product->images as $image)<a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($image->path) }}" target="_blank" rel="noopener"><img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($image->path) }}" alt="Foto tambahan {{ $product->name }}"></a>@endforeach</div>@endif
     </div>
     <div class="detail-info"><span class="category-label">{{ $product->category?->name ?? 'Lainnya' }}</span><h1>{{ $product->name }}</h1>
-      @if($product->source_url)<p class="partner-note">Barang disediakan dan dikirim oleh mitra. <a href="{{ $product->source_url }}" target="_blank" rel="noopener noreferrer">Lihat sumber produk ↗</a></p>@endif
       @if($product->market_price)<p class="market-price">Estimasi harga pasar Rp {{ number_format($product->market_price,0,',','.') }}</p>@endif
       <div class="detail-price"><span>Harga tebus</span><strong>Rp {{ number_format($product->price,0,',','.') }}</strong></div>
       <div class="stock-line">{{ $product->status==='published'&&$product->stock>0?'Tersedia · stok '.$product->stock:'Tidak tersedia' }}</div>
