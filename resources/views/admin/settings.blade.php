@@ -12,7 +12,7 @@
     </div>
     <div class="panel stack">
       <h2>Notifikasi pembelian</h2>
-      <p class="fine-print">Notifikasi hanya menampilkan pesanan yang telah ditandai lunas oleh admin. Nama pelanggan tidak ditampilkan.</p>
+      <p class="fine-print">Notifikasi menampilkan hingga 300 pesanan yang telah ditandai lunas oleh admin, dalam urutan acak dan berulang. Nama pelanggan tidak ditampilkan.</p>
       <input type="hidden" name="purchase_notice_enabled" value="0">
       <label class="check-line"><input type="checkbox" name="purchase_notice_enabled" value="1" @checked(old('purchase_notice_enabled',$values['purchase_notice_enabled']??'1')=='1')> Tampilkan notifikasi</label>
       <label>Muncul di halaman<select name="purchase_notice_scope" required>
